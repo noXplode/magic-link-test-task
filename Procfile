@@ -1,0 +1,1 @@
+web: gunicorn magiclink.wsgi --log-file -
