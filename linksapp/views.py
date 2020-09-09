@@ -46,7 +46,7 @@ def addemail(request):
                 new_token.save()
 
                 # creating url for user
-                url = reverse('linksapp:token_auth', args=(str(new_token.token),))
+                url = request.build_absolute_uri(reverse('linksapp:token_auth', args=(str(new_token.token),)))
 
                 # sending email with URL
                 # using Django In-memory backend for testing purposes
