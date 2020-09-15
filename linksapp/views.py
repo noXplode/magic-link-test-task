@@ -78,12 +78,14 @@ def token_auth(request, rtoken):
 
 def tokenslist(request):
     try:
-        token = request.session['emailtoken']
+        token_str = request.session['emailtoken']
     except KeyError:
         raise Http404()
     else:
-        if is_vaild(uuid.UUID(token)) is True:
+        if is_vaild(uuid.UUID(token_str)) is True:
             # User authorised
-            print(uuid.UUID(token))
+            # print(uuid.UUID(token_str))
             tokens = EmailToken.objects.all()
             return render(request, 'linksapp/tokens.html', {'tokens': tokens})
+        else:
+            raise Http404()
