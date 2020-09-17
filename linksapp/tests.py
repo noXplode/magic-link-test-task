@@ -58,15 +58,16 @@ class EmailTokenModelTest(TestCase):
 class AddemailTest(TestCase):
 
     @patch('linksapp.views.mail.send_mail', return_value=1)
-    def test_mail_sender(self, mock_send_mail):
+    @patch('linksapp.views.mail.outbox', return_value=[{'body': 'Test email message'}])
+    def test_mail_sender(self, mock_outbox, mock_send_mail):
         """
         testing method with successful sending
         """
         token = EmailTokenFactory()
         url = reverse('linksapp:token_auth', args=(str(token.token),))
-        result = mail_sender(token, url)
+        result, messagetext = mail_sender(token, url)
         self.assertTrue(mock_send_mail.called)
-        self.assertEqual(result, 1)
+        self.assertTrue(result)
 
     @patch('linksapp.views.mail.send_mail', return_value=0)
     def test_mail_sender_fail(self, mock_send_mail):
@@ -75,9 +76,9 @@ class AddemailTest(TestCase):
         """
         token = EmailTokenFactory()
         url = reverse('linksapp:token_auth', args=(str(token.token),))
-        result = mail_sender(token, url)
+        result, messagetext = mail_sender(token, url)
         self.assertTrue(mock_send_mail.called)
-        self.assertEqual(result, 0)
+        self.assertFalse(result)
 
     def test_is_added(self):
         """
@@ -97,7 +98,7 @@ class AddemailTest(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response, "linksapp/email.html")
 
-    @patch('linksapp.views.mail_sender', return_value=True)
+    @patch('linksapp.views.mail_sender', return_value=(True, 'Test email message'))
     def test_valid_form_with_new_email(self, mock_mail_sender):
         """
         testing new email address, email must be sent
@@ -107,15 +108,16 @@ class AddemailTest(TestCase):
         messages = list(get_messages(response.wsgi_request))
         self.assertTrue(mock_mail_sender.called)
         self.assertEqual(messages[0].message, 'На email test@email.com была отправлена ссылка.')
+        self.assertEqual(messages[1].message, 'Текст письма Test email message')
         self.assertEqual(response.status_code, 302)
         self.assertRedirects(response, reverse('linksapp:addemail'))
-    
-    @patch('linksapp.views.mail_sender', return_value=True)
+
+    @patch('linksapp.views.mail_sender', return_value=(False, ''))
     def test_valid_form_with_used_email(self, mock_mail_sender):
         """
         testing used email address, email must not be sent
         """
-        token = EmailTokenFactory(email='test@email.com')
+        EmailTokenFactory(email='test@email.com')
         data = {'email': 'test@email.com'}
         response = self.client.post(reverse('linksapp:addemail'), data)
         messages = list(get_messages(response.wsgi_request))
@@ -124,7 +126,7 @@ class AddemailTest(TestCase):
         self.assertEqual(response.status_code, 302)
         self.assertRedirects(response, reverse('linksapp:addemail'))
 
-    @patch('linksapp.views.mail_sender', return_value=False)
+    @patch('linksapp.views.mail_sender', return_value=(False, ''))
     def test_valid_form_email_send_error(self, mock_mail_sender):
         """
         testing new email address with sending email error
