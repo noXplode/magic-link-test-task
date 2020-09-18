@@ -1,9 +1,18 @@
 # magic-link-test-task
 
-Clone repository, Run:
+Clone repository, inside magic-link-test-task directory create and activate your virtual envienvironment, Run:
+```
+pip install -r requirements.txt
+```
+Create .env file
+```
+SECRET_KEY=INSERT_YOUR_DJANGO_SECRET_KEY_HERE
+```
+Run
 ```
 python manage.py migrate
 python manage.py createsuperuser
+python manage.py runserver
 ```
 
 ## task
